@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include <vector>
 
@@ -81,6 +82,13 @@ int main()
    */
    // Output phi here
 
+   for(int i = 1; i < N - 1; i++)
+   {
+        for(int j = 1; j < N - 1; j++)
+        {
+        }
+   }
+
    // Output electric here
    for(int i = 1; i < N - 1; i++)
    {
@@ -88,6 +96,8 @@ int main()
         {
             Ex = -(phi[i + 1][j] - phi[i - 1][j]) / ( 2.0 * delta );
             Ey = -(phi[i][j + 1] - phi[i][j - 1]) / ( 2.0 * delta );
+            double t = std::sqrt(Ex * Ex + Ey * Ey);
+
             // file output
         }
    }

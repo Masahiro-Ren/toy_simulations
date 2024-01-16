@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 
@@ -26,6 +27,10 @@ const double INIT_LOW_TEMP = 1.0;
  * A rough real-time visualization of the heat transfer 
 */
 void display(vec2d<double>& T);
+/**
+ * Save data as binary file
+*/
+void output(vec2d<double>& T);
 
 int main()
 {   
@@ -66,13 +71,15 @@ int main()
         // copy the new result
         std::copy(nT.begin(), nT.end(), T.begin());
 
-        // display every 5 steps
-        if(istep % 5 == 0)
-        {
-            display(T);
-        }
+        // // display every 5 steps
+        // if(istep % 5 == 0)
+        // {
+        //     display(T);
+        // }
     }
     /* ============== Heat transfer end ============= */
+
+    output(T);
 
     return EXIT_SUCCESS;
 }
@@ -95,4 +102,19 @@ void display(vec2d<double>& T)
 
     // reset terminal color
     cout << "\x01B[39m" << endl;
+}
+
+void output(vec2d<double>& T)
+{
+    ofstream file("heat.dat", ios::binary);
+
+    for(int ix = 0; ix < NX; ix++)
+    {
+        for(int iy = 0; iy < NY; iy++)
+        {
+            file.write(reinterpret_cast<const char*>(&T[ix][iy]), sizeof(double));
+        }
+    }
+
+    file.close(); 
 }
