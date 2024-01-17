@@ -11,13 +11,14 @@ template <typename T>
 using vec2d = vector<vector<T>>;
 
 /* --------- Parameters & variables ---------- */
-constexpr int N = 102;
+constexpr int Ntot = 102;
+constexpr int N = 100;
 
 constexpr double X = 1.0; // real field size is 1 meter in X and Y directions
 constexpr double delta = X / N;
 constexpr int center = (int)(N/2);
-const double e_zero = 8.85E-12;
-const double CONV = 1.0E-6;
+const double e_zero = 8.85e-12;
+const double CONV = 1.0e-6;
 
 vec2d<double> phi;
 vec2d<double> rho;
@@ -25,8 +26,6 @@ vec2d<double> rho;
 double MaxPhi;
 double MaxErr;
 double CurErr;
-double Ex, Ey;
-
 
 int main()
 {
@@ -34,73 +33,81 @@ int main()
      * Initialization
     */
    int STEPS = 0;
-   phi = vec2d<double>(N, vec1d<double>(N, 0.0));
-   rho = vec2d<double>(N, vec1d<double>(N, 0.0));
+   MaxPhi = 1.0e-10;
 
-   for(int i = 1; i < N - 1; i++)
+   phi = vec2d<double>(Ntot, vec1d<double>(Ntot, 0.0));
+   rho = vec2d<double>(Ntot, vec1d<double>(Ntot, 0.0));
+
+   for(int i = 1; i <= N; i++)
    {
-        for(int j = 0; j < N - 1; j++)
+        for(int j = 1; j <= N; j++)
         {
-            if( ((center - i) * (center - i) + (center - j) * (center - j) * delta * delta) < 0.05 * 0.05 )
-                rho[i][j] = 1.0E-8;
+            if( ((center - i) * (center - i) + (center - j) * (center - j)) * delta * delta < 0.05 * 0.05 )
+                rho[i][j] = 1.0e-8;
         }
    }
-
-   MaxPhi = 1.0E-10;
 
    /**
     * Simulation Start
    */
 
-   while(MaxErr < CONV)
+   do
    {
+        if(!(STEPS%1000)) cout << "Steps " << STEPS << ". MaxErr=" << MaxErr << "; MaxPhi=" << MaxPhi << endl;
         MaxErr = CurErr = 0.0;
-        for(int i = 1; i < N - 1; i++)
+        for(int i = 1; i <= N; i++)
         {
-            for(int j = 1; j < N - 1; j++)
+            for(int j = 1; j <= N; j++)
             {
-                int Prev_phi = phi[i][j];
+                double Prev_phi = phi[i][j];
+
                 phi[i][j] = ( phi[i + 1][j] +
-                              phi[i][j + 1] +
                               phi[i - 1][j] +
+                              phi[i][j + 1] +
                               phi[i][j - 1] +
-                              rho[i][j] * delta * delta / e_zero
+                              rho[i][j] * delta * delta / e_zero 
                              ) * 0.25;
 
-                if(MaxPhi < std::abs(phi[i][j])) MaxPhi = phi[i][j];
-                CurErr = (std::abs(phi[i][j] - Prev_phi)) / MaxPhi;
+                if(MaxPhi < fabs(phi[i][j])) MaxPhi = phi[i][j];
+
+                CurErr = (fabs(phi[i][j] - Prev_phi)) / MaxPhi;
+
                 if(MaxErr < CurErr) MaxErr = CurErr;
             }
         }
         STEPS++;
-   }
+    } while(MaxErr > CONV);
 
    /**
     * Output & post process
-    * TODO:
-    * let the program output binary files
    */
    // Output phi here
-
-   for(int i = 1; i < N - 1; i++)
+   ofstream phi_out("phi.avd", ios::binary);
+   for(int i = 1; i <= N; i++)
    {
-        for(int j = 1; j < N - 1; j++)
+        for(int j = 1; j <= N; j++)
         {
+            phi_out.write(reinterpret_cast<const char*>(&phi[i][j]), sizeof(double));
         }
    }
+   phi_out.close();
 
    // Output electric here
-   for(int i = 1; i < N - 1; i++)
+   ofstream elec_out("electric.avd", ios::binary);
+   for(int i = 1; i <= N; i++)
    {
-        for(int j = 1; j < N - 1; j++)
+        for(int j = 1; j <= N; j++)
         {
-            Ex = -(phi[i + 1][j] - phi[i - 1][j]) / ( 2.0 * delta );
-            Ey = -(phi[i][j + 1] - phi[i][j - 1]) / ( 2.0 * delta );
-            double t = std::sqrt(Ex * Ex + Ey * Ey);
+            double Ex = -(phi[i + 1][j] - phi[i - 1][j]) / ( 2.0 * delta );
+            double Ey = -(phi[i][j + 1] - phi[i][j - 1]) / ( 2.0 * delta );
+            double Esqrt = std::sqrt(Ex * Ex + Ey * Ey);
 
-            // file output
+            elec_out.write(reinterpret_cast<const char*>(&Ex), sizeof(double));
+            elec_out.write(reinterpret_cast<const char*>(&Ey), sizeof(double));
+            elec_out.write(reinterpret_cast<const char*>(&Esqrt), sizeof(double));
         }
    }
+   elec_out.close();
 
     return EXIT_SUCCESS;
 }
