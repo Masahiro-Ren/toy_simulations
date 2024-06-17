@@ -6,6 +6,7 @@ class Communicator {
 public:
     MPI_Comm COMM_CART;
     MPI_Status COMM_STAT;
+    int DIMS[2];
     int MY_RANK;
     int MY_COORD[2];
     int MY_NEIGHBOURS[4];
@@ -23,6 +24,9 @@ public:
     }
 
     void Print_RankInfo();
+    void Barrier();
+    void SendRecv();
+
 private:
     void Init_comm(int argc, char* argv[]);
 };

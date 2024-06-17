@@ -6,6 +6,7 @@ TARGET = heat_transfer
 OBJS = \
 parameters.o \
 communicator.o \
+domain.o \
 main.o
 
 $(TARGET):$(OBJS)
