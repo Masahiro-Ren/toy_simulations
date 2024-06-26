@@ -25,7 +25,9 @@ public:
 
     void Print_RankInfo();
     void Barrier();
-    void SendRecv();
+    void SendRecv(double* send_pos, int send_cnt, 
+                  double* recv_pos, int recv_cnt, 
+                  int max_direction, int min_direction, MPI_Datatype data_type);
 
 private:
     void Init_comm(int argc, char* argv[]);

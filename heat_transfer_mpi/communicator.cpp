@@ -21,7 +21,7 @@ void Communicator::Init_comm(int argc, char* argv[])
     MPI_Cart_shift(COMM_CART, 0, 1, &MY_NEIGHBOURS[LEFT], &MY_NEIGHBOURS[RIGHT]);
     // get my neighbours in y-direction
     MPI_Cart_shift(COMM_CART, 1, 1, &MY_NEIGHBOURS[BOTTOM], &MY_NEIGHBOURS[TOP]);
-
+    // set up dims
     this->DIMS[0] = dims[0];
     this->DIMS[1] = dims[1];
 
@@ -29,8 +29,8 @@ void Communicator::Init_comm(int argc, char* argv[])
 
 void Communicator::Print_RankInfo()
 {
-    cout << "[MPI Process " << MY_RANK << " ] ";
-    cout << "in CART (" << MY_COORD[0] << ", " << MY_COORD[1] << ")" << endl;
+    std::cout << "[MPI Process " << MY_RANK << " ] ";
+    std::cout << "in CART (" << MY_COORD[0] << ", " << MY_COORD[1] << ")\n";
 }
 void Communicator::Barrier()
 {
@@ -39,7 +39,14 @@ void Communicator::Barrier()
 /**
  * Waiting for implementation 
  */
-void Communicator::SendRecv()
+void Communicator::SendRecv(double* send_pos, int send_cnt,
+                            double* recv_pos, int recv_cnt, 
+                            int max_direction, int min_direction, MPI_Datatype data_type)
 {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    // std::cout << __PRETTY_FUNCTION__ << std::endl;
+    int TAG = 100;
+    int dest = MY_NEIGHBOURS[max_direction];
+    int src = MY_NEIGHBOURS[min_direction];
+    MPI_Sendrecv(send_pos, send_cnt, data_type, dest, TAG,
+                    recv_pos, recv_cnt, data_type, src, TAG, COMM_CART, MPI_STATUS_IGNORE);
 }

@@ -2,7 +2,7 @@
 #include "communicator.hpp"
 #include "domain.hpp"
 
-int MAX_STEPS = 1;
+int MAX_STEPS = 200;
 
 void Init_Data(Communicator& MyComm, Domain& MyDomain);
 
@@ -10,35 +10,44 @@ int main(int argc, char* argv[])
 {
     
     Communicator MyComm(argc, argv);
-    MyComm.Print_RankInfo();
     Domain MyDomain(MyComm.DIMS, MyComm.MY_RANK);
 
-    Init_Data(MyComm, MyDomain);
     // wait until all processes finished data initialization
+    Init_Data(MyComm, MyDomain);
     MyComm.Barrier();
 
-    if(MyDomain.Id == 1)
+    double* temp = new double[MyDomain.NxA * MyDomain.NyA];
+    MyDomain.Replicate_Data(temp);
+
+    // Calculation
+    for(int istep = 0; istep < MAX_STEPS; istep++)
     {
-        MyDomain.Print_Domain();
+        for(int ix = 1; ix <= MyDomain.Nx; ix++)
+        {
+            for(int iy = 1; iy <= MyDomain.Ny; iy++)
+            {
+                temp[ix * MyDomain.NyA + iy] = 0.25 * ( MyDomain(ix + 1, iy) +
+                                                        MyDomain(ix - 1, iy) +
+                                                        MyDomain(ix, iy + 1) +
+                                                        MyDomain(ix, iy - 1)  );
+            }
+        }
+
+        MyDomain.Assign(temp);
+
+        // Communication
+        MyDomain.Exchange_Boundary(MyComm);
     }
 
-    //     // copy data to send buf
+    MyComm.Barrier();
 
-    //     // exchange data with neighbours
-    //     MPI_Sendrecv(SEND_BUF[UP], local_ny, MPI_DOUBLE, MY_NEIGHBOURS[UP], UP,
-    //                     RECV_BUF[UP], local_ny, MPI_DOUBLE, MY_NEIGHBOURS[UP], DOWN, COMM_CART, &COMM_STAT);
+    // if(MyDomain.Id == 0)
+    // {
+    //     MyComm.Print_RankInfo();
+    //     MyDomain.Print_Domain();
+    // }
 
-    //     MPI_Sendrecv(SEND_BUF[DOWN], local_ny, MPI_DOUBLE, MY_NEIGHBOURS[DOWN], DOWN,
-    //                     RECV_BUF[DOWN], local_ny, MPI_DOUBLE, MY_NEIGHBOURS[DOWN], UP, COMM_CART, &COMM_STAT);
-
-    //     MPI_Sendrecv(SEND_BUF[LEFT], local_nx, MPI_DOUBLE, MY_NEIGHBOURS[LEFT], LEFT,
-    //                     RECV_BUF[LEFT], local_nx, MPI_DOUBLE, MY_NEIGHBOURS[LEFT], RIGHT, COMM_CART, &COMM_STAT);
-
-    //     MPI_Sendrecv(SEND_BUF[RIGHT], local_nx, MPI_DOUBLE, MY_NEIGHBOURS[RIGHT], RIGHT,
-    //                     RECV_BUF[RIGHT], local_nx, MPI_DOUBLE, MY_NEIGHBOURS[RIGHT], LEFT, COMM_CART, &COMM_STAT);
-    //     // copy data from recv_buf to halo fields 
-
-
+    delete[] temp;
     return EXIT_SUCCESS;
 }
 
